@@ -1,0 +1,74 @@
+package com.service;
+
+import com.dto.ProductDto;
+import com.dto.UserDto;
+import com.model.User;
+import com.repository.UserRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@Service
+public class UserService {
+
+    private final UserRepository userRepository;
+
+    private UserDto userDto(User user) {
+        return new UserDto(user.getId(), user.getUsername());
+    }
+
+    public List<UserDto> getAllUsersDto() {
+        return userRepository.findAll().stream()
+                .map(this::userDto)
+                .collect(Collectors.toList());
+    }
+
+    public Optional<UserDto> getUserByIdDto(Long id) {
+        return userRepository.findById(id)
+                .map(this::userDto);
+    }
+
+    public UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Transactional
+    public User createUser(String username) {
+        User user = new User(username);
+        return userRepository.save(user);
+    }
+
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Пользователь с id=" + id + " не найден"));
+    }
+
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    public List<UserDto> getAllProductsDto() {
+        return userRepository.findAll().stream()
+                .map(this::userDto)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new RuntimeException("Пользователь с id=" + id + " не найден");
+        }
+        userRepository.deleteById(id);
+    }
+
+    public Optional<User> findByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    public List<User> findByUsernameStartingWith(String prefix) {
+        return userRepository.findByUsernameStartingWith(prefix);
+    }
+}
