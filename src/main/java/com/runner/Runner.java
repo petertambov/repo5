@@ -1,45 +1,62 @@
 package com.runner;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
-import com.user.User;
-import com.repository.UserRepository;
-import com.userservice.UserService;
+import java.math.BigDecimal;
 
+import com.dto.ProductDto;
+import com.model.ProductType;
+import com.model.User;
+import com.service.ProductService;
+import com.service.UserService;
 
 @Component
 public class Runner implements CommandLineRunner {
 
     private final UserService userService;
+    private final ProductService productService;
+    private final ConfigurableApplicationContext context;
 
-    public Runner(UserService userService) {
+    public Runner(UserService userService, ProductService productService,
+                  ConfigurableApplicationContext context) {
         this.userService = userService;
+        this.productService = productService;
+        this.context = context;
     }
 
     @Override
     public void run(String... args) throws Exception {
 
-        User testUser2 = userService.createUser("TestUser2");
-        System.out.printf("Создан пользователь: %s%n", testUser2);
-
-        User testUser3 = userService.createUser("TestUser3");
-        System.out.printf("Создан пользователь: %s%n", testUser3);
-
-        User testUserX = userService.getUserById(testUser3.getId());
-        System.out.printf("Получен пользователь по id: %s%n", testUserX.getId());
+        User admin = userService.findByUsername("Admin")
+                .orElseThrow(() -> new RuntimeException("Пользователь Admin не найден"));
+        User testUser = userService.findByUsername("TestUser1")
+                .orElseThrow(() -> new RuntimeException("Пользователь TestUser не найден"));
 
         userService.getAllUsers().forEach(System.out::println);
 
-        userService.deleteUser(testUserX.getId());
-        System.out.printf("Пользователь %s удалён.%n", testUserX.getUsername());
+        productService.deleteAllProducts();
 
-        System.out.println("После удаления:");
-        userService.getAllUsers().forEach(System.out::println);
+        ProductDto account1 = productService.createProduct(
+                "40817810000000000001",
+                BigDecimal.valueOf(15000.50),
+                ProductType.ACCOUNT,
+                testUser.getId()
+        );
+        ProductDto card1 = productService.createProduct(
+                "4276000000000001",
+                BigDecimal.valueOf(5000.00),
+                ProductType.CARD,
+                testUser.getId()
+        );
 
-        userService.findByUsername("Admin")
-                .ifPresentOrElse(System.out::println, () -> System.out.println("Пользователь с именем 'Admin' не найден"));
+        System.out.println("Продукты пользователя " + testUser.getUsername() + ":");
+        productService.getProductsByUserId(testUser.getId())
+                .forEach(System.out::println);
 
-        userService.findByUsernameStartingWith("A").forEach(u -> System.out.printf("Пользователи, имя которых начинается с 'A' :%s%n", u));
+ //       int exitCode = SpringApplication.exit(context);
+        //System.exit(exitCode);
     }
 }
